@@ -93,6 +93,13 @@
     border-top:1px solid var(--line);padding:10px 14px calc(10px + var(--sb));
     transform:translateY(110%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
   .player.show{transform:translateY(0)}
+  .player.autohide{transform:translateY(110%)}
+  .player.collapsed{transform:translateY(110%)}
+  .pcollapse{position:absolute;top:1px;right:8px;background:transparent;border:none;color:var(--soft);font-size:18px;line-height:1;padding:8px 10px}
+  .reopen{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + var(--sb));z-index:60;display:none;align-items:center;gap:8px;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:none;border-radius:999px;padding:11px 18px;font-size:13px;font-weight:800;box-shadow:0 8px 22px rgba(91,141,239,.55);max-width:84%}
+  .reopen.show{display:flex}
+  .reopen span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dl-badge{display:inline-block;font-size:10px;color:var(--green);background:rgba(95,208,164,.12);border:1px solid rgba(95,208,164,.35);border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:middle}
   .pwrap{max-width:560px;margin:0 auto}
   .pinfo{display:flex;align-items:center;gap:11px}
   .pcover{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto}
@@ -333,6 +340,7 @@
 
 <!-- 底部播放器 -->
 <div class="player" id="player">
+  <button class="pcollapse" id="pCollapse" title="收起播放条">⌄</button>
   <div class="pwrap">
     <div class="pinfo">
       <div class="pcover" id="pCover">🎵</div>
@@ -352,12 +360,12 @@
         <span id="shuffleIco" class="on">🔀</span>
         <span id="subIco" class="on" title="字幕">📝</span>
         <span id="repeatIco">🔁</span>
+        <span id="dlIco" title="下载到本机（离线听）">⬇️</span>
       </div>
     </div>
   </div>
 </div>
-
-<!-- 字幕面板 -->
+<button class="reopen" id="reopenBtn"><span>🎵 <span id="reopenTitle">英语磨耳朵</span></span></button>
 <div class="subpanel" id="subpanel">
   <div class="subhead"><span id="subTitle">字幕</span><span class="subhint">当前句子会高亮 ✓</span></div>
   <div class="subbody" id="subBody"></div>
@@ -408,6 +416,7 @@ let shuffle=true, repeat=true, sub=true;
 let sleepTimer=null, sleepEnd=0;
 let subParas=[];        // 当前字幕段落数组
 let lastSubIdx=-1;      // 上次高亮的段落索引（避免重复滚动）
+let downloaded=JSON.parse(localStorage.getItem('english_kids_dl_v1')||'{}');  // 已下载到本机的音频 id
 
 // 设置持久化
 const SKEY='english_kids_settings_v1';
@@ -423,6 +432,7 @@ function copyText(t){if(navigator.clipboard)navigator.clipboard.writeText(t).the
 
 // ===== 渲染资源库 =====
 let curFilter='all';
+let curTab='lib';
 function renderLib(){
   const grid=document.getElementById('grid');
   const list=LIBRARY.filter(b=>curFilter==='all'||b.grade===curFilter);
@@ -430,8 +440,9 @@ function renderLib(){
   if(!list.length){grid.innerHTML='<div class="empty">该分级下暂无素材</div>';return;}
   list.forEach(b=>{
     const el=document.createElement('div');el.className='book';
+    const got=downloaded[b.id];
     el.innerHTML=`<div class="emoji">${b.emoji}</div>
-      <h3>${b.title}</h3>
+      <h3>${b.title}${got?'<span class="dl-badge">✓ 已下载</span>':''}</h3>
       <div class="meta">${b.author} · ${b.lexile}L</div>
       <div class="tags">
         <span class="tag t-lex">${b.grade}</span>
@@ -442,14 +453,16 @@ function renderLib(){
       <div class="acts">
         <button class="b-play" data-play="${b.id}">▶ 播放</button>
         <button class="b-add" data-add="${b.id}">＋ 队列</button>
+        <button class="b-dl" data-dl="${b.id}">${got?'✓ 已下':'⬇ 下载'}</button>
       </div>`;
     grid.appendChild(el);
   });
 }
 document.getElementById('grid').addEventListener('click',e=>{
-  const p=e.target.getAttribute('data-play');const a=e.target.getAttribute('data-add');
+  const p=e.target.getAttribute('data-play');const a=e.target.getAttribute('data-add');const d=e.target.getAttribute('data-dl');
   if(p){const b=LIBRARY.find(x=>x.id===p);if(b)playNow(b);}
   if(a){const b=LIBRARY.find(x=>x.id===a);if(b)addToQueue(b);}
+  if(d){const b=LIBRARY.find(x=>x.id===d);if(b)primeDownload(b);}
 });
 document.getElementById('filters').addEventListener('click',e=>{
   if(!e.target.dataset.f)return;curFilter=e.target.dataset.f;
@@ -535,6 +548,18 @@ function addToQueue(b){
   queue.push(b);toast('已加入队列：'+(b.title||''));
   if(!audio.src){idx=queue.length-1;setNow(b);showPlayer();loadAndPlay(b);}
   renderQueue();
+}
+// 下载到本机（离线可听）：交给 Service Worker 缓存音频文件
+function primeDownload(b){
+  if(!b||!b.mp3)return;
+  if(downloaded[b.id]){toast('这首已经下载过啦 ✓');return;}
+  toast('⏳ 正在下载「'+(b.title||'')+'」…');
+  // no-cors 请求会经过 Service Worker，由 sw.js 把音频写入缓存
+  fetch(b.mp3,{mode:'no-cors'}).then(()=>{
+    downloaded[b.id]=1;localStorage.setItem('english_kids_dl_v1',JSON.stringify(downloaded));
+    toast('✅ 已下载，没网也能听：'+(b.title||''));
+    if(curTab==='lib')renderLib();
+  }).catch(()=>toast('⚠️ 下载失败，请检查网络后重试'));
 }
 function playIndex(i){
   if(!queue.length)return;
@@ -673,6 +698,7 @@ document.getElementById('bar').onclick=e=>{if(!audio.duration)return;const r=e.c
 document.getElementById('shuffleIco').onclick=()=>{setShuffle(!shuffle);};
 document.getElementById('repeatIco').onclick=()=>{setRepeat(!repeat);};
 document.getElementById('subIco').onclick=()=>{setSub(!sub);};
+document.getElementById('dlIco').onclick=()=>{const b=queue[idx];if(b)primeDownload(b);};
 
 // ===== 点击开始遮罩（iOS 自动播放拦截兜底）=====
 function showTapOverlay(){document.getElementById('tapOverlay').classList.add('show');}
@@ -700,7 +726,7 @@ document.getElementById('setSub').onclick=()=>setSub(!sub);
 // 标签页切换
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
-  const which=t.dataset.t;
+  const which=t.dataset.t;curTab=which;
   document.getElementById('sec-lib').style.display=which==='lib'?'block':'none';
   document.getElementById('sec-mine').style.display=which==='mine'?'block':'none';
   document.getElementById('sec-queue').style.display=which==='queue'?'block':'none';
@@ -780,6 +806,33 @@ renderLib();renderMy();renderQueue();refreshAutoUrls();
 // 设置变更后（音量）刷新自动链接
 document.getElementById('setVol').addEventListener('change',refreshAutoUrls);
 handleParams();renderQueue();
+
+// ===== 播放条：手动收起 / 自动隐藏（避免挡住字幕）=====
+function collapsePlayer(v){
+  const p=document.getElementById('player');
+  p.classList.toggle('collapsed',v);
+  p.classList.remove('autohide');
+  const r=document.getElementById('reopenBtn');
+  r.classList.toggle('show',v);
+  const cur=queue[idx];
+  document.getElementById('reopenTitle').textContent=(cur&&cur.title)||'英语磨耳朵';
+}
+document.getElementById('pCollapse').onclick=()=>collapsePlayer(true);
+document.getElementById('reopenBtn').onclick=()=>collapsePlayer(false);
+let _sy=0;
+window.addEventListener('scroll',()=>{
+  const y=window.scrollY||document.documentElement.scrollTop||0;
+  const p=document.getElementById('player');
+  if(p.classList.contains('collapsed')){_sy=y;return;}
+  if(y>_sy+8)p.classList.add('autohide');
+  else if(y<_sy-8)p.classList.remove('autohide');
+  _sy=y;
+},{passive:true});
+
+// ===== 离线支持：注册 Service Worker（缓存音频，断网也能听）=====
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}
 </script>
 </body>
 </html>
