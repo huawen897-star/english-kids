@@ -146,6 +146,20 @@
     padding:11px 18px;border-radius:999px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;transition:.3s;pointer-events:none;z-index:80;max-width:90%;text-align:center}
   .toast.show{opacity:1}
   .loading{text-align:center;color:var(--soft);font-size:13px;padding:14px}
+
+  /* 播放列队 */
+  .qhead{display:flex;align-items:center;justify-content:space-between;margin:2px 2px 12px}
+  .qhead .qcount{font-size:12px;color:var(--soft);font-weight:700}
+  .qhead .qclear{font-size:12px;color:var(--pink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 13px}
+  .qhead .qclear:active{transform:translateY(1px)}
+  #queueList .qitem{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:9px}
+  #queueList .qitem.on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset;background:linear-gradient(160deg,var(--card),var(--card2))}
+  .q-emoji{font-size:24px;flex:0 0 auto}
+  .q-info{flex:1;min-width:0}
+  .q-title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .q-sub{font-size:11px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .q-del{flex:0 0 auto;background:transparent;border:none;color:var(--soft);font-size:17px;padding:4px 6px}
+  .badge{display:inline-block;min-width:18px;height:18px;line-height:18px;text-align:center;background:var(--blue);color:#fff;border-radius:999px;font-size:11px;font-weight:800;margin-left:3px;padding:0 5px;vertical-align:middle}
 </style>
 </head>
 <body>
@@ -168,6 +182,7 @@
   <div class="tabs">
     <button class="tab active" data-t="lib">📚 资源库</button>
     <button class="tab" data-t="mine">➕ 我的音频</button>
+    <button class="tab" data-t="queue">📜 播放列队</button>
     <button class="tab" data-t="set">⚙️ 设置</button>
   </div>
 
@@ -191,6 +206,16 @@
       <button id="addBtn">加入</button>
     </div>
     <div id="myList"></div>
+  </section>
+
+  <!-- 播放列队 -->
+  <section id="sec-queue" style="display:none">
+    <div class="tip">这里能看到<b>正在播放</b>和<b>接下来要播</b>的列表。点任意一首即可跳到那首；右边的 ✕ 可把它从列队里去掉。每天随机（洗牌）时，顺序每次都不太一样。</div>
+    <div class="qhead">
+      <span class="qcount" id="qCount">列队：0 首</span>
+      <button class="qclear" id="qClear">🗑 清空列队</button>
+    </div>
+    <div id="queueList"></div>
   </section>
 
   <!-- 设置 -->
@@ -307,7 +332,7 @@
 
 <script>
 "use strict";
-// ===== 精选资源库（与 resources/library.json 同步，共 17 条）=====
+// ===== 精选资源库（与 resources/library.json 同步，共 27 条，链接均经实测可播放）=====
 const LIBRARY=[
  {id:"sn_pigs",title:"The Three Little Pigs（三只小猪）",author:"传统童话",lexile:400,grade:"三年级",accent:"英音",source:"Storynory",emoji:"🐷",type:"storynory",mp3:"https://media.libsyn.com/media/blogrelations/Three_Pigs.mp3",url:"https://www.storynory.com/the-three-little-pigs-2/",note:"重复句式，适合跟读；母语者朗读"},
  {id:"sn_ugly",title:"The Ugly Duckling（丑小鸭）",author:"Hans Christian Andersen",lexile:400,grade:"三年级",accent:"英音",source:"Storynory",emoji:"🦢",type:"storynory",mp3:"https://media.libsyn.com/media/blogrelations/ugly_duckling.mp3",url:"https://www.storynory.com/the-ugly-duckling/",note:"经典童话，语速适中"},
@@ -431,15 +456,48 @@ function setNow(b){
 }
 function playNow(b){
   queue=[b];idx=0;setNow(b);showPlayer();
-  loadAndPlay(b);
+  loadAndPlay(b);renderQueue();
 }
 function addToQueue(b){
   queue.push(b);toast('已加入队列：'+(b.title||''));
   if(!audio.src){idx=queue.length-1;setNow(b);showPlayer();loadAndPlay(b);}
+  renderQueue();
 }
 function playIndex(i){
   if(!queue.length)return;
-  idx=(i+queue.length)%queue.length;const b=queue[idx];setNow(b);loadAndPlay(b);
+  idx=(i+queue.length)%queue.length;const b=queue[idx];setNow(b);loadAndPlay(b);renderQueue();
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+// ===== 渲染播放列队 =====
+function renderQueue(){
+  const wrap=document.getElementById('queueList');
+  const count=document.getElementById('qCount');
+  const qtab=document.querySelector('.tab[data-t="queue"]');
+  if(count)count.textContent='列队：'+queue.length+' 首';
+  if(qtab)qtab.innerHTML='📜 播放列队'+(queue.length?' <span class="badge">'+queue.length+'</span>':'');
+  if(!wrap)return;
+  if(!queue.length){wrap.innerHTML='<div class="empty">列队还是空的<br>去「资源库」点 ▶ 播放 或 ＋ 加入列队</div>';return;}
+  wrap.innerHTML='';
+  queue.forEach((b,i)=>{
+    const el=document.createElement('div');
+    el.className='qitem'+(i===idx?' on':'');
+    el.innerHTML='<div class="q-emoji">'+(b.emoji||'🎵')+'</div>'+
+      '<div class="q-info"><div class="q-title">'+escapeHtml(b.title||'音频')+'</div><div class="q-sub">'+escapeHtml(b.author||'')+(i===idx?' · 🔊 正在播放':'')+'</div></div>'+
+      '<button class="q-del" data-del="'+i+'">✕</button>';
+    el.addEventListener('click',e=>{ if(e.target.classList.contains('q-del'))return; playIndex(i); });
+    wrap.appendChild(el);
+  });
+  wrap.querySelectorAll('.q-del').forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation();
+    const i=parseInt(btn.dataset.del,10);
+    queue.splice(i,1);
+    if(i<idx){idx--;}
+    else if(i===idx){
+      if(queue.length===0){idx=0;audio.pause();audio.removeAttribute('src');setNow({title:'未在播放',emoji:'🎵'});}
+      else{idx=Math.max(0,Math.min(idx,queue.length-1));setNow(queue[idx]);loadAndPlay(queue[idx]);}
+    }
+    renderQueue();
+  });
 }
 function loadAndPlay(b){
   document.getElementById('pState').textContent='缓冲中…';
@@ -495,8 +553,15 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   const which=t.dataset.t;
   document.getElementById('sec-lib').style.display=which==='lib'?'block':'none';
   document.getElementById('sec-mine').style.display=which==='mine'?'block':'none';
+  document.getElementById('sec-queue').style.display=which==='queue'?'block':'none';
   document.getElementById('sec-set').style.display=which==='set'?'block':'none';
+  if(which==='queue')renderQueue();
 });
+// 清空列队
+document.getElementById('qClear').onclick=()=>{
+  queue=[];idx=0;audio.pause();audio.removeAttribute('src');setNow({title:'未在播放',emoji:'🎵'});
+  renderQueue();toast('已清空列队');
+};
 
 // 复制链接按钮（含新的大按钮）
 document.querySelectorAll('.copybtn,.copybig').forEach(b=>b.onclick=()=>copyText(document.getElementById(b.dataset.copy).textContent));
@@ -561,10 +626,10 @@ function handleParams(){
 }
 
 // 初始化
-renderLib();renderMy();refreshAutoUrls();
+renderLib();renderMy();renderQueue();refreshAutoUrls();
 // 设置变更后（音量）刷新自动链接
 document.getElementById('setVol').addEventListener('change',refreshAutoUrls);
-handleParams();
+handleParams();renderQueue();
 </script>
 </body>
 </html>
