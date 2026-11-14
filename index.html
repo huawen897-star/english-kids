@@ -117,6 +117,29 @@
   .tap-overlay p{color:var(--soft);font-size:14px;margin:0 0 28px;line-height:1.6}
   .tap-btn{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:none;border-radius:18px;padding:18px 44px;font-size:19px;font-weight:800;box-shadow:0 10px 30px rgba(91,141,239,.5)}
 
+  .sess{background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px}
+  .sess .top{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;margin-bottom:14px}
+  .row2{display:flex;gap:12px;align-items:flex-end}
+  .field{flex:1;min-width:0}
+  .field label{display:block;font-size:11px;color:var(--soft);margin-bottom:6px}
+  .field.vol{display:flex;flex-direction:column}
+  input[type=time]{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px 10px;color:var(--ink);font-size:17px;font-weight:800;text-align:center}
+  .copybig{margin-top:14px;width:100%;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:none;border-radius:13px;padding:14px;font-size:15px;font-weight:800;box-shadow:0 6px 16px rgba(91,141,239,.35)}
+  .copybig:active{transform:translateY(1px)}
+  .sharebig{margin-top:12px;width:100%;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:13px;padding:14px;font-size:14px;font-weight:800}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:12px 0 0}
+  .steps li{position:relative;padding:13px 12px 13px 48px;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:9px;font-size:13px;line-height:1.65}
+  .steps li:before{counter-increment:s;content:counter(s);position:absolute;left:12px;top:13px;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .steps b{color:var(--blue2)}
+  .phone-mock{margin:16px auto 4px;width:170px;background:#080a18;border:3px solid #2c3258;border-radius:26px;padding:14px 12px}
+  .phone-mock .notch{width:56px;height:6px;background:#2c3258;border-radius:99px;margin:0 auto 12px}
+  .phone-mock .scr{background:var(--bg2);border-radius:12px;padding:11px}
+  .phone-mock .ln{height:9px;border-radius:6px;background:#2c3258;margin:7px 0}
+  .phone-mock .ln.s{width:60%}
+  .phone-mock .ln.hl{background:linear-gradient(135deg,var(--blue),var(--blue2))}
+  .phone-mock .ln.g{background:#1f6b4a}
+  .gentip{font-size:11px;color:var(--soft);text-align:center;margin-top:6px}
+
   .toast{position:fixed;left:50%;bottom:calc(180px + var(--sb));transform:translateX(-50%);background:rgba(20,24,52,.96);color:#fff;
     padding:11px 18px;border-radius:999px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;transition:.3s;pointer-events:none;z-index:80;max-width:90%;text-align:center}
   .toast.show{opacity:1}
@@ -170,25 +193,57 @@
 
   <!-- 设置 -->
   <section id="sec-set" style="display:none">
-    <div class="set-row">
-      <h4>🔔 定时自动播放（iPhone 快捷指令）</h4>
-      <div class="desc">用 iOS「快捷指令」在固定时间自动打开本网页并播放，锁屏也不漏。下方已按你的设置生成两个链接，复制到快捷指令的「打开 URL」即可。</div>
-      <div class="pillrow" style="margin-top:10px">
-        <span class="pill" id="pMorning">☀️ 早上</span>
-        <span class="pill" id="pEvening">🌙 晚上</span>
+    <div class="tip">全部用「点一点」完成，<b>不用写任何代码</b>。先在下面选好早/晚的<b>时间</b>和<b>音量</b>，点按钮复制链接；再到 iPhone 自带的「快捷指令」里贴进去就好。</div>
+
+    <div class="sess">
+      <div class="top">☀️ 早上（起床磨耳朵）</div>
+      <div class="row2">
+        <div class="field"><label>每天时间</label><input type="time" id="timeMorning" value="07:30"></div>
+        <div class="field vol"><label>音量 <span id="volM">70%</span></label><input type="range" id="volMorning" min="0" max="100" value="70"></div>
       </div>
-      <div class="urlbox" id="urlMorning"></div>
-      <button class="copybtn" data-copy="urlMorning">📋 复制早上链接</button>
-      <div class="urlbox" id="urlEvening" style="margin-top:10px"></div>
-      <button class="copybtn" data-copy="urlEvening">📋 复制晚上链接</button>
-      <div class="desc" style="margin-top:10px">打开 <b>快捷指令 App → 自动化 → 创建个人自动化 → 时间 → 添加「打开 URL」→ 粘贴上面的链接</b>。详细步骤见附带说明。</div>
+      <button class="copybig" data-copy="urlMorning">📋 复制早上链接</button>
+    </div>
+
+    <div class="sess">
+      <div class="top">🌙 晚上（睡前哄睡）</div>
+      <div class="row2">
+        <div class="field"><label>每天时间</label><input type="time" id="timeEvening" value="20:00"></div>
+        <div class="field vol"><label>音量 <span id="volE">45%</span></label><input type="range" id="volEvening" min="0" max="100" value="45"></div>
+      </div>
+      <button class="copybig" data-copy="urlEvening">📋 复制晚上链接</button>
+    </div>
+
+    <div class="sess">
+      <div class="top">📤 一键发给自已/家人</div>
+      <div class="desc" style="font-size:12px;color:var(--soft);margin-bottom:10px">点下面按钮，把两套链接和时间通过微信 / 短信 / 隔空投送发走，省得再打字。</div>
+      <button class="sharebig" id="shareBtn">📤 分享两套定时设置</button>
     </div>
 
     <div class="set-row">
-      <h4>🎚 默认音量</h4>
+      <h4>📱 3 步设置定时（看图就会）</h4>
+      <ol class="steps">
+        <li>打开 iPhone 自带 <b>「快捷指令」</b> App → 底部 <b>「自动化」</b> → 右上角 <b>「+」</b> → <b>「创建个人自动化」</b> → 选 <b>「时间」</b>。</li>
+        <li>把时间设成你上面选的 <b>早上 <span id="tM">7:30</span></b> / <b>晚上 <span id="tE">20:00</span></b>，重复选「每天」，点「下一步」。</li>
+        <li>点 <b>「添加操作」</b> → 搜 <b>「打开 URL」</b> → 粘贴对应链接 → 关闭 <b>「运行前询问」</b> → 完成。到点手机自动弹出播放 🎉</li>
+      </ol>
+      <div class="phone-mock">
+        <div class="notch"></div>
+        <div class="scr">
+          <div class="ln hl"></div>
+          <div class="ln"></div>
+          <div class="ln s"></div>
+          <div class="ln g"></div>
+          <div class="ln s"></div>
+        </div>
+      </div>
+      <div class="gentip">示意：把链接放进「打开 URL」即可</div>
+    </div>
+
+    <div class="set-row">
+      <h4>🎚 手动播放音量（直接点开听时用）</h4>
       <input type="range" id="setVol" min="0" max="100" value="70">
       <div style="font-size:12px;color:var(--soft)" id="setVolVal">70%</div>
-      <div class="desc">早上用较高音量，晚上建议调低当白噪音哄睡。</div>
+      <div class="desc">这是你平时自己点开网页播放时的音量；早/晚定时用的音量是上面两张卡片里的设置。</div>
     </div>
 
     <div class="set-row">
@@ -207,13 +262,16 @@
         <span class="pill" data-s="30">30分钟</span>
         <span class="pill" data-s="60">60分钟</span>
       </div>
-      <div class="desc">到点自动停止，适合睡前场景。</div>
+      <div class="desc">点到点自动停止，适合睡前场景。</div>
     </div>
 
     <div class="set-row">
       <h4>📲 加到主屏幕</h4>
       <div class="desc">Safari 打开本页 → 点底部「分享」按钮 → <b>添加到主屏幕</b>。之后像 App 一样点开，配合上面的定时链接，体验最顺。</div>
     </div>
+
+    <div class="urlbox" id="urlMorning" style="display:none"></div>
+    <div class="urlbox" id="urlEvening" style="display:none"></div>
   </section>
 </div>
 
@@ -428,8 +486,24 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.getElementById('sec-set').style.display=which==='set'?'block':'none';
 });
 
-// 复制链接按钮
-document.querySelectorAll('.copybtn').forEach(b=>b.onclick=()=>copyText(document.getElementById(b.dataset.copy).textContent));
+// 复制链接按钮（含新的大按钮）
+document.querySelectorAll('.copybtn,.copybig').forEach(b=>b.onclick=()=>copyText(document.getElementById(b.dataset.copy).textContent));
+
+// 时间 / 音量 选择器 → 实时刷新链接与步骤里的时间
+['volMorning','volEvening','timeMorning','timeEvening'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{
+    if(id==='volMorning')document.getElementById('volM').textContent=morningVol()+'%';
+    if(id==='volEvening')document.getElementById('volE').textContent=eveningVol()+'%';
+    refreshAutoUrls();
+  });
+});
+
+// 一键分享两套设置（微信/短信/隔空投送）
+document.getElementById('shareBtn').onclick=()=>{
+  const txt='🎧 英语磨耳朵定时设置\n☀️ 早上 '+document.getElementById('timeMorning').value+'：'+document.getElementById('urlMorning').textContent+'\n🌙 晚上 '+document.getElementById('timeEvening').value+'：'+document.getElementById('urlEvening').textContent;
+  if(navigator.share){navigator.share({title:'英语磨耳朵定时',text:txt}).catch(()=>copyText(txt));}
+  else copyText(txt);
+};
 
 // ===== URL 参数：配合快捷指令自动播放 =====
 function baseUrl(){return location.origin+location.pathname;}
@@ -442,11 +516,15 @@ function buildAutoUrl(opts){
   return baseUrl()+'?'+p.toString();
 }
 function refreshAutoUrls(){
-  const vol=settings.vol;
-  // 早上：三年级为主，较高音量；晚上：三年级+进阶，较低音量当白噪音
-  document.getElementById('urlMorning').textContent=buildAutoUrl({level:'三年级',vol:Math.max(vol,70)});
-  document.getElementById('urlEvening').textContent=buildAutoUrl({level:'三年级',vol:Math.min(vol,45)});
+  const mU=buildAutoUrl({level:'三年级',vol:morningVol()});
+  const eU=buildAutoUrl({level:'三年级',vol:eveningVol()});
+  document.getElementById('urlMorning').textContent=mU;
+  document.getElementById('urlEvening').textContent=eU;
+  document.getElementById('tM').textContent=document.getElementById('timeMorning').value;
+  document.getElementById('tE').textContent=document.getElementById('timeEvening').value;
 }
+function morningVol(){return parseInt(document.getElementById('volMorning').value,10)||70;}
+function eveningVol(){return parseInt(document.getElementById('volEvening').value,10)||45;}
 
 // 处理启动参数
 function handleParams(){
