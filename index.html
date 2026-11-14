@@ -307,7 +307,7 @@
       <div class="pillrow">
         <span class="pill on" id="setSub">显示字幕（跟着读）</span>
       </div>
-      <div class="desc">播放时下方会显示故事文字，孩子可以边听边看、跟着念。多数故事都内置了字幕。</div>
+      <div class="desc">播放时下方会显示故事文字，<b>正在读的那句会自动高亮</b>，孩子边听边看、跟着念更轻松。多数故事都内置了字幕。</div>
     </div>
 
     <div class="set-row">
@@ -359,7 +359,7 @@
 
 <!-- 字幕面板 -->
 <div class="subpanel" id="subpanel">
-  <div class="subhead"><span id="subTitle">字幕</span><span class="subhint">边听边看，跟着读</span></div>
+  <div class="subhead"><span id="subTitle">字幕</span><span class="subhint">当前句子会高亮 ✓</span></div>
   <div class="subbody" id="subBody"></div>
 </div>
 
@@ -406,6 +406,8 @@ let queue=[];          // 当前播放队列（资源对象数组）
 let idx=0;             // 当前索引
 let shuffle=true, repeat=true, sub=true;
 let sleepTimer=null, sleepEnd=0;
+let subParas=[];        // 当前字幕段落数组
+let lastSubIdx=-1;      // 上次高亮的段落索引（避免重复滚动）
 
 // 设置持久化
 const SKEY='english_kids_settings_v1';
@@ -496,6 +498,7 @@ function setNow(b){
 function renderSubtitles(){
   const panel=document.getElementById('subpanel'),body=document.getElementById('subBody'),titleEl=document.getElementById('subTitle');
   const cur=queue[idx];
+  subParas=[]; lastSubIdx=-1;
   if(!settings.sub||!cur){panel.classList.add('hidden');return;}
   panel.classList.remove('hidden');
   if(!cur||!SUBTITLES||!SUBTITLES[cur.mp3]){
@@ -504,8 +507,22 @@ function renderSubtitles(){
     return;
   }
   titleEl.textContent='字幕 · '+(cur.title||'');
-  body.innerHTML=SUBTITLES[cur.mp3].map(t=>'<p>'+escapeHtml(t)+'</p>').join('');
+  subParas=SUBTITLES[cur.mp3];
+  body.innerHTML=subParas.map(t=>'<p>'+escapeHtml(t)+'</p>').join('');
   body.scrollTop=0;
+  highlightSub();
+}
+// 根据播放进度高亮「当前正在读的段落」
+function highlightSub(){
+  if(!subParas.length)return;
+  const d=audio.duration||0, c=audio.currentTime||0;
+  let i = d? Math.min(subParas.length-1, Math.floor(c/d*subParas.length)) : 0;
+  if(i===lastSubIdx)return;
+  lastSubIdx=i;
+  const ps=document.querySelectorAll('#subBody p');
+  ps.forEach((p,k)=>p.classList.toggle('cur',k===i));
+  const cur=ps[i];
+  if(cur)cur.scrollIntoView({block:'center',behavior:'smooth'});
 }
 function setSub(v){sub=v;settings.sub=v;saveSet();document.getElementById('subIco').classList.toggle('on',v);document.getElementById('setSub').classList.toggle('on',v);renderSubtitles();}
 function playNow(b){
@@ -639,6 +656,7 @@ audio.addEventListener('timeupdate',()=>{
   const d=audio.duration||0,c=audio.currentTime||0;
   document.getElementById('fill').style.width=(d?c/d*100:0)+'%';
   document.getElementById('tCur').textContent=fmt(c);
+  highlightSub();
   if(sleepEnd&&Date.now()>sleepEnd){audio.pause();clearSleep();toast('⏱ 睡眠定时到，已停止');}
 });
 audio.addEventListener('play',()=>{document.getElementById('playBtn').textContent='⏸';document.getElementById('pState').textContent='播放中';});
