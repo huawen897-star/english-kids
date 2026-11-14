@@ -159,6 +159,13 @@
   .q-title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .q-sub{font-size:11px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
   .q-del{flex:0 0 auto;background:transparent;border:none;color:var(--soft);font-size:17px;padding:4px 6px}
+  .qhead-right{display:flex;align-items:center;gap:8px}
+  .qmode{font-size:12px;font-weight:800;color:var(--blue2);background:var(--card2);border:1px solid var(--blue);border-radius:999px;padding:6px 13px}
+  .qmode.on{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border-color:transparent}
+  .qmode:active{transform:translateY(1px)}
+  .qtip{font-size:11px;color:var(--soft);margin:0 2px 12px;line-height:1.5}
+  .q-handle{flex:0 0 auto;color:var(--soft);font-size:20px;padding:0 4px;cursor:grab;touch-action:none;user-select:none}
+  .qitem.dragging{opacity:.7;box-shadow:0 10px 26px rgba(0,0,0,.5);transform:scale(1.02);border-color:var(--blue)}
   .badge{display:inline-block;min-width:18px;height:18px;line-height:18px;text-align:center;background:var(--blue);color:#fff;border-radius:999px;font-size:11px;font-weight:800;margin-left:3px;padding:0 5px;vertical-align:middle}
 </style>
 </head>
@@ -213,8 +220,12 @@
     <div class="tip">这里能看到<b>正在播放</b>和<b>接下来要播</b>的列表。点任意一首即可跳到那首；右边的 ✕ 可把它从列队里去掉。每天随机（洗牌）时，顺序每次都不太一样。</div>
     <div class="qhead">
       <span class="qcount" id="qCount">列队：0 首</span>
-      <button class="qclear" id="qClear">🗑 清空列队</button>
+      <div class="qhead-right">
+        <button class="qmode" id="qShuffle">🔀 洗牌</button>
+        <button class="qclear" id="qClear">🗑 清空</button>
+      </div>
     </div>
+    <div class="qtip">按住左侧 <b>⠿</b> 上下拖动可给列队排序；点「🔀 洗牌」可随机重排，列表实时变化。</div>
     <div id="queueList"></div>
   </section>
 
@@ -455,10 +466,12 @@ function setNow(b){
   document.getElementById('pSub').textContent=(b.author?b.author+' · ':'')+(b.source||b.accent||'');
 }
 function playNow(b){
+  b._order=(b._order!=null)?b._order:orderSeq++;
   queue=[b];idx=0;setNow(b);showPlayer();
   loadAndPlay(b);renderQueue();
 }
 function addToQueue(b){
+  b._order=(b._order!=null)?b._order:orderSeq++;
   queue.push(b);toast('已加入队列：'+(b.title||''));
   if(!audio.src){idx=queue.length-1;setNow(b);showPlayer();loadAndPlay(b);}
   renderQueue();
@@ -481,10 +494,12 @@ function renderQueue(){
   queue.forEach((b,i)=>{
     const el=document.createElement('div');
     el.className='qitem'+(i===idx?' on':'');
-    el.innerHTML='<div class="q-emoji">'+(b.emoji||'🎵')+'</div>'+
+    el.innerHTML='<div class="q-handle">⠿</div>'+
+      '<div class="q-emoji">'+(b.emoji||'🎵')+'</div>'+
       '<div class="q-info"><div class="q-title">'+escapeHtml(b.title||'音频')+'</div><div class="q-sub">'+escapeHtml(b.author||'')+(i===idx?' · 🔊 正在播放':'')+'</div></div>'+
       '<button class="q-del" data-del="'+i+'">✕</button>';
-    el.addEventListener('click',e=>{ if(e.target.classList.contains('q-del'))return; playIndex(i); });
+    el.addEventListener('click',e=>{ if(e.target.classList.contains('q-del'))return; if(justDragged){justDragged=false;return;} playIndex(i); });
+    attachDrag(el,b);
     wrap.appendChild(el);
   });
   wrap.querySelectorAll('.q-del').forEach(btn=>btn.onclick=e=>{
@@ -498,12 +513,84 @@ function renderQueue(){
     }
     renderQueue();
   });
+  syncQShuffle();
 }
 function loadAndPlay(b){
   document.getElementById('pState').textContent='缓冲中…';
   audio.src=b.mp3;
   audio.play().then(()=>{}).catch(()=>{showTapOverlay();});
 }
+
+// ===== 列队：洗牌重排 + 拖拽排序 =====
+let orderSeq=0, justDragged=false, dragEl=null;
+function applyOrder(mode){
+  if(!queue.length)return;
+  const cur=queue[idx];
+  if(mode==='shuffle'){
+    for(let i=queue.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[queue[i],queue[j]]=[queue[j],queue[i]];}
+  } else {
+    queue.sort((a,b)=>(a._order||0)-(b._order||0));
+  }
+  idx=Math.max(0,queue.indexOf(cur));
+  renderQueue();
+}
+function attachDrag(el,b){
+  el.__b=b;
+  const h=el.querySelector('.q-handle');
+  if(!h)return;
+  h.addEventListener('pointerdown',e=>{
+    e.preventDefault();e.stopPropagation();
+    dragEl=el;el.classList.add('dragging');
+    try{h.setPointerCapture(e.pointerId);}catch(_){}
+    h.addEventListener('pointermove',onDragMove);
+    h.addEventListener('pointerup',onDragEnd);
+    h.addEventListener('pointercancel',onDragEnd);
+  });
+}
+function onDragMove(e){
+  if(!dragEl)return;
+  const y=e.clientY;
+  const items=[...document.querySelectorAll('#queueList .qitem')];
+  for(const it of items){
+    if(it===dragEl)continue;
+    const r=it.getBoundingClientRect();
+    if(y<r.top+r.height/2){
+      if(it.compareDocumentPosition(dragEl)&Node.DOCUMENT_POSITION_FOLLOWING){
+        dragEl.parentNode.insertBefore(dragEl,it);
+      } else {
+        dragEl.parentNode.insertBefore(dragEl,it.nextSibling);
+      }
+      break;
+    }
+  }
+}
+function onDragEnd(){
+  if(!dragEl)return;
+  const h=dragEl.querySelector('.q-handle');
+  h.removeEventListener('pointermove',onDragMove);
+  h.removeEventListener('pointerup',onDragEnd);
+  h.removeEventListener('pointercancel',onDragEnd);
+  dragEl.classList.remove('dragging');
+  const items=[...document.querySelectorAll('#queueList .qitem')];
+  const cur=queue[idx];
+  queue=items.map(it=>it.__b);
+  idx=Math.max(0,queue.indexOf(cur));
+  justDragged=true;
+  dragEl=null;
+  renderQueue();
+}
+// 列队顶部「洗牌/顺序」切换
+function syncQShuffle(){
+  const btn=document.getElementById('qShuffle');
+  if(!btn)return;
+  btn.classList.toggle('on',shuffle);
+  btn.textContent=shuffle?'🔀 洗牌中':'➡️ 顺序';
+}
+document.getElementById('qShuffle').addEventListener('click',()=>{
+  setShuffle(!shuffle);
+  applyOrder(shuffle?'shuffle':'order');
+  syncQShuffle();
+});
 audio.addEventListener('loadedmetadata',()=>{document.getElementById('tDur').textContent=fmt(audio.duration);});
 audio.addEventListener('timeupdate',()=>{
   const d=audio.duration||0,c=audio.currentTime||0;
@@ -531,7 +618,7 @@ function hideTapOverlay(){document.getElementById('tapOverlay').classList.remove
 document.getElementById('tapBtn').onclick=()=>{hideTapOverlay();audio.play().catch(()=>toast('仍无法播放，请检查网络或链接'));};
 
 // ===== 设置项 =====
-function setShuffle(v){shuffle=v;settings.shuffle=v;saveSet();document.getElementById('shuffleIco').classList.toggle('on',v);document.getElementById('setShuffle').classList.toggle('on',v);}
+function setShuffle(v){shuffle=v;settings.shuffle=v;saveSet();document.getElementById('shuffleIco').classList.toggle('on',v);document.getElementById('setShuffle').classList.toggle('on',v);syncQShuffle();}
 function setRepeat(v){repeat=v;settings.repeat=v;saveSet();document.getElementById('repeatIco').classList.toggle('on',v);document.getElementById('setRepeat').classList.toggle('on',v);}
 function saveSet(){localStorage.setItem(SKEY,JSON.stringify(settings));}
 function clearSleep(){if(sleepTimer){clearInterval(sleepTimer);sleepTimer=null;}sleepEnd=0;document.querySelectorAll('#sleepRow .pill').forEach(p=>p.classList.toggle('on',p.dataset.s==='0'));}
