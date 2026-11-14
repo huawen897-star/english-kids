@@ -3,6 +3,12 @@
 目标：**每天早/晚，iPhone 自动弹出网页并开始播放英语**，锁屏也不漏。
 核心原理：`手机网页播放器（可加到主屏）` + `iOS 快捷指令自动化（到点打开网页并播放）`。
 
+> ✅ **本项目已部署**，直接可用的网址：
+> **https://huawen897-star.github.io/english-kids/**
+> 快捷指令用的两个链接（复制即可用）：
+> - ☀️ 早上：`https://huawen897-star.github.io/english-kids/?auto=1&level=三年级&vol=70`
+> - 🌙 晚上：`https://huawen897-star.github.io/english-kids/?auto=1&level=三年级&vol=45`
+
 ---
 
 ## 第 1 步：把网页放到一个网址（3 选 1）
@@ -13,7 +19,7 @@
 1. 打开 https://github.com ，注册/登录，新建一个仓库（如 `english-kids`）。
 2. 把 `phone/index.html` 上传到仓库根目录。
 3. 仓库 → **Settings → Pages** → Source 选 `main` 分支、根目录 → Save。
-4. 几分钟后得到网址：`https://你的用户名.github.io/english-kids/index.html`
+4. 几分钟后网站上线，网址形如 `https://你的用户名.github.io/english-kids/`（本项目的已部署地址见顶部）。
 
 ### 方案 B：Netlify Drop（最省事，拖一下就行）
 1. 打开 https://app.netlify.com/drop ，用邮箱注册登录。
@@ -45,8 +51,8 @@ iPhone 和 Mac 连同一个 Wi‑Fi，iPhone 浏览器打开 `http://Mac的IP:80
    - 晚上：设定比如 20:00 → 下一步
 3. 点 **「添加操作」** → 搜索 **「打开 URL」** → 选它。
 4. 把 URL 填成网页里「设置」页生成的链接（见下），例如：
-   - 早上：`https://你的网址/index.html?auto=1&level=三年级&vol=70`
-   - 晚上：`https://你的网址/index.html?auto=1&level=三年级&vol=45`
+   - 早上：`https://huawen897-star.github.io/english-kids/?auto=1&level=三年级&vol=70`
+   - 晚上：`https://huawen897-star.github.io/english-kids/?auto=1&level=三年级&vol=45`
 5. 关掉 **「运行前询问」**（这样到点才真正自动，不弹确认）。
 6. 完成。到点 iPhone 会自动打开网页并开始播放。
 
