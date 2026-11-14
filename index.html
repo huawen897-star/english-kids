@@ -62,6 +62,7 @@
   .acts{display:flex;gap:8px}
   .acts .b-play{flex:1;border:none;border-radius:11px;padding:10px 4px;font-size:13px;font-weight:800;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff}
   .acts .b-icon{flex:0 0 auto;width:44px;border:1px solid var(--line);border-radius:11px;padding:10px 0;font-size:17px;background:var(--card2);color:var(--soft)}
+  .acts .b-link{flex:0 0 auto;width:44px;border:1px solid rgba(91,141,239,.45);border-radius:11px;padding:10px 0;font-size:16px;background:rgba(91,141,239,.12);color:var(--blue2)}
 
   .tip{font-size:12px;color:var(--soft);line-height:1.6;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
   .tip b{color:var(--blue2)}
@@ -121,6 +122,7 @@
   .mini{display:flex;align-items:center;gap:13px;font-size:17px;color:var(--soft)}
   .mini .on{color:var(--blue2)}
   .mini #subIco{cursor:pointer}
+  .mini #linkIco{cursor:pointer}
   .subpanel{margin:10px 0 4px;background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:18px;overflow:hidden}
   .subpanel.hidden{display:none}
   .subhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;font-size:13px;font-weight:800}
@@ -366,6 +368,7 @@
         <span id="subIco" class="on" title="字幕">📝</span>
         <span id="repeatIco">🔁</span>
         <span id="dlIco" title="下载到本机（离线听）">⬇️</span>
+        <span id="linkIco" title="存到文件 App">🔗</span>
       </div>
     </div>
   </div>
@@ -467,15 +470,17 @@ function renderLib(){
       <div class="acts">
         <button class="b-play" data-play="${b.id}">▶ 播放</button>
         <button class="b-icon" data-add="${b.id}" title="加入队列">＋</button>
+        <button class="b-link" data-link="${b.id}" title="存到文件 App">🔗</button>
       </div>`;
     grid.appendChild(el);
   });
 }
 document.getElementById('grid').addEventListener('click',e=>{
-  const p=e.target.getAttribute('data-play');const a=e.target.getAttribute('data-add');const d=e.target.getAttribute('data-dl');
+  const p=e.target.getAttribute('data-play');const a=e.target.getAttribute('data-add');const d=e.target.getAttribute('data-dl');const l=e.target.getAttribute('data-link');
   if(p){const b=LIBRARY.find(x=>x.id===p);if(b)playNow(b);}
   if(a){const b=LIBRARY.find(x=>x.id===a);if(b)addToQueue(b);}
   if(d){const b=LIBRARY.find(x=>x.id===d);if(b)primeDownload(b);}
+  if(l){const b=LIBRARY.find(x=>x.id===l);if(b)openLink(b);}
 });
 document.getElementById('filters').addEventListener('click',e=>{
   if(!e.target.dataset.f)return;curFilter=e.target.dataset.f;
@@ -573,6 +578,14 @@ function primeDownload(b){
     toast('✅ 已下载，没网也能听：'+(b.title||''));
     if(curTab==='lib')renderLib();
   }).catch(()=>toast('⚠️ 下载失败，请检查网络后重试'));
+}
+// 打开音频直链：可长按「存储到文件」存进 iPhone 的「文件」App
+function openLink(b){
+  if(!b||!b.mp3)return;
+  try{ if(navigator.clipboard)navigator.clipboard.writeText(b.mp3).catch(()=>{}); }catch(e){}
+  const w=window.open(b.mp3,'_blank');
+  if(!w && !document.hidden) location.href=b.mp3;
+  toast('🔗 直链已打开：在 Safari 里长按音频 →「存储到文件」即可存到手机');
 }
 function playIndex(i){
   if(!queue.length)return;
@@ -712,6 +725,7 @@ document.getElementById('shuffleIco').onclick=()=>{setShuffle(!shuffle);};
 document.getElementById('repeatIco').onclick=()=>{setRepeat(!repeat);};
 document.getElementById('subIco').onclick=()=>{setSub(!sub);};
 document.getElementById('dlIco').onclick=()=>{const b=queue[idx];if(b)primeDownload(b);};
+document.getElementById('linkIco').onclick=()=>{const b=queue[idx];if(b)openLink(b);};
 
 // ===== 点击开始遮罩（iOS 自动播放拦截兜底）=====
 function showTapOverlay(){document.getElementById('tapOverlay').classList.add('show');}
