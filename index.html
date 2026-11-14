@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="英语磨耳朵">
+<meta name="theme-color" content="#5b8def">
+<title>🎧 英语磨耳朵 · 给孩子</title>
+<style>
+  :root{
+    --bg:#0f1226; --bg2:#171a35; --card:#1e2240; --card2:#262b52;
+    --ink:#f2f4ff; --soft:#9aa2c8; --line:#2c3258;
+    --blue:#5b8def; --blue2:#7aa6ff; --pink:#ff8fb1; --green:#5fd0a4;
+    --yellow:#ffd166; --orange:#ff9f6b; --purple:#b18cff;
+    --sb:env(safe-area-inset-bottom,0px); --st:env(safe-area-inset-top,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+    background:radial-gradient(120% 80% at 50% -10%,#222a5e 0%,var(--bg) 55%) fixed;
+    color:var(--ink);overscroll-behavior:none;-webkit-text-size-adjust:100%;
+    padding-bottom:calc(160px + var(--sb));
+  }
+  .app{max-width:560px;margin:0 auto;padding:calc(var(--st) + 14px) 14px 14px}
+  header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  header .logo{font-size:26px}
+  header h1{font-size:19px;margin:0;font-weight:800;letter-spacing:.5px}
+  header p{margin:2px 0 0;font-size:12px;color:var(--soft)}
+
+  .tabs{display:flex;gap:6px;background:var(--bg2);padding:5px;border-radius:16px;margin-bottom:14px}
+  .tab{flex:1;text-align:center;padding:11px 4px;border-radius:12px;font-size:14px;font-weight:700;color:var(--soft);border:none;background:transparent}
+  .tab.active{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;box-shadow:0 6px 16px rgba(91,141,239,.4)}
+
+  .filters{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+  .filters::-webkit-scrollbar{display:none}
+  .filter{flex:0 0 auto;padding:9px 15px;border-radius:999px;font-size:13px;font-weight:700;color:var(--soft);background:var(--card);border:1px solid var(--line)}
+  .filter.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .book{background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:18px;padding:13px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .book .emoji{font-size:22px;margin-bottom:6px}
+  .book h3{margin:0 0 3px;font-size:14px;line-height:1.3}
+  .book .meta{font-size:11px;color:var(--soft);margin-bottom:8px}
+  .tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px}
+  .tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px}
+  .t-lex{background:rgba(91,141,239,.18);color:#9cc0ff}
+  .t-acc{background:rgba(255,143,177,.18);color:#ffb3cb}
+  .t-src{background:rgba(95,208,164,.18);color:#86e6c2}
+  .book .note{font-size:11px;color:var(--soft);line-height:1.45;margin:0 0 10px;flex:1}
+  .acts{display:flex;gap:7px}
+  .acts button{flex:1;border:none;border-radius:11px;padding:9px 4px;font-size:12px;font-weight:700}
+  .b-play{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff}
+  .b-add{background:var(--card2);color:var(--soft);border:1px solid var(--line)!important}
+
+  .tip{font-size:12px;color:var(--soft);line-height:1.6;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+  .tip b{color:var(--blue2)}
+
+  /* 我的音频 */
+  .addrow{display:flex;gap:8px;margin-bottom:12px}
+  .addrow input{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--ink);font-size:14px;min-width:0}
+  .addrow input::placeholder{color:var(--soft)}
+  .addrow button{background:linear-gradient(135deg,var(--green),#7ee0b8);color:#06321f;border:none;border-radius:12px;padding:0 16px;font-weight:800;font-size:14px}
+  .myitem{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:9px}
+  .myitem .mi-emoji{font-size:20px}
+  .myitem .mi-info{flex:1;min-width:0}
+  .myitem .mi-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .myitem .mi-url{font-size:10px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .myitem button{border:none;background:transparent;font-size:18px;padding:4px 8px}
+  .empty{text-align:center;color:var(--soft);font-size:13px;padding:30px 10px;line-height:1.7}
+
+  /* 设置 */
+  .set-row{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+  .set-row h4{margin:0 0 10px;font-size:14px}
+  .set-row .desc{font-size:11px;color:var(--soft);margin-top:8px;line-height:1.5}
+  .pillrow{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{padding:9px 14px;border-radius:11px;font-size:13px;font-weight:700;background:var(--card2);color:var(--soft);border:1px solid var(--line)}
+  .pill.on{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border-color:var(--blue)}
+  input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:999px;background:var(--line);outline:none;margin:6px 0}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--blue);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+  .urlbox{background:#0a0c1c;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:12px;color:var(--blue2);word-break:break-all;line-height:1.6;margin-top:8px}
+  .copybtn{margin-top:8px;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:10px;font-size:13px;font-weight:700;width:100%}
+
+  /* 底部播放器 */
+  .player{position:fixed;left:0;right:0;bottom:0;z-index:40;
+    background:linear-gradient(180deg,rgba(20,24,52,.92),rgba(12,14,34,.98));
+    backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border-top:1px solid var(--line);padding:10px 14px calc(10px + var(--sb));
+    transform:translateY(110%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+  .player.show{transform:translateY(0)}
+  .pwrap{max-width:560px;margin:0 auto}
+  .pinfo{display:flex;align-items:center;gap:11px}
+  .pcover{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto}
+  .ptext{flex:1;min-width:0}
+  .ptitle{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .psub{font-size:11px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pstate{flex:0 0 auto;font-size:11px;color:var(--soft);min-width:42px;text-align:right}
+  .bar{height:5px;background:var(--line);border-radius:999px;margin:10px 0 4px;position:relative;overflow:hidden}
+  .bar .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--blue),var(--blue2));border-radius:999px}
+  .ptime{display:flex;justify-content:space-between;font-size:10px;color:var(--soft);margin-bottom:8px}
+  .ctrl{display:flex;align-items:center;justify-content:center;gap:22px}
+  .ctrl button{background:transparent;border:none;color:var(--ink);font-size:24px;padding:2px 6px}
+  .ctrl .play{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 6px 18px rgba(91,141,239,.5)}
+  .mini{display:flex;align-items:center;gap:16px;font-size:18px;color:var(--soft)}
+  .mini .on{color:var(--blue2)}
+
+  /* 点击开始遮罩（iOS 自动播放被拦截时的兜底）*/
+  .tap-overlay{position:fixed;inset:0;z-index:90;background:radial-gradient(120% 80% at 50% 30%,#2a3270,#0d0f24);
+    display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+  .tap-overlay.show{display:flex}
+  .tap-overlay .big{font-size:64px;animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+  .tap-overlay h2{font-size:24px;margin:18px 0 6px}
+  .tap-overlay p{color:var(--soft);font-size:14px;margin:0 0 28px;line-height:1.6}
+  .tap-btn{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:none;border-radius:18px;padding:18px 44px;font-size:19px;font-weight:800;box-shadow:0 10px 30px rgba(91,141,239,.5)}
+
+  .toast{position:fixed;left:50%;bottom:calc(180px + var(--sb));transform:translateX(-50%);background:rgba(20,24,52,.96);color:#fff;
+    padding:11px 18px;border-radius:999px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;transition:.3s;pointer-events:none;z-index:80;max-width:90%;text-align:center}
+  .toast.show{opacity:1}
+  .loading{text-align:center;color:var(--soft);font-size:13px;padding:14px}
+</style>
+</head>
+<body>
+<div class="tap-overlay" id="tapOverlay">
+  <div class="big">🎧</div>
+  <h2>开始听英语啦</h2>
+  <p>点一下，给宝贝播放今天的故事～</p>
+  <button class="tap-btn" id="tapBtn">▶ 开始播放</button>
+</div>
+
+<div class="app">
+  <header>
+    <div class="logo">🎧</div>
+    <div>
+      <h1>英语磨耳朵</h1>
+      <p>每天早晚，给三年级宝贝听母语者英语</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-t="lib">📚 资源库</button>
+    <button class="tab" data-t="mine">➕ 我的音频</button>
+    <button class="tab" data-t="set">⚙️ 设置</button>
+  </div>
+
+  <!-- 资源库 -->
+  <section id="sec-lib">
+    <div class="tip">蓝思为参考值（三年级≈<b>450L–725L</b>）。<b>Storynory</b> 是英国演员朗读的短篇，最适合每天磨耳朵；<b>LibriVox</b> 是公版经典。点 <b>▶</b> 立即播放，点 <b>＋</b> 加入播放队列。</div>
+    <div class="filters" id="filters">
+      <span class="filter active" data-f="all">全部</span>
+      <span class="filter" data-f="启蒙">启蒙 &lt;500L</span>
+      <span class="filter" data-f="三年级">三年级 500–749L</span>
+      <span class="filter" data-f="进阶">进阶 ≥750L</span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- 我的音频 -->
+  <section id="sec-mine" style="display:none">
+    <div class="tip">把任意 <b>直接的 .mp3 链接</b> 粘贴进来（比如你网盘分享的音频直链、或 Storynory/LibriVox 的 mp3 地址），就能加入队列、离线前可先试听。数据只存在本机浏览器。</div>
+    <div class="addrow">
+      <input id="urlInput" placeholder="粘贴 mp3 直链，例如 https://.../abc.mp3" />
+      <button id="addBtn">加入</button>
+    </div>
+    <div id="myList"></div>
+  </section>
+
+  <!-- 设置 -->
+  <section id="sec-set" style="display:none">
+    <div class="set-row">
+      <h4>🔔 定时自动播放（iPhone 快捷指令）</h4>
+      <div class="desc">用 iOS「快捷指令」在固定时间自动打开本网页并播放，锁屏也不漏。下方已按你的设置生成两个链接，复制到快捷指令的「打开 URL」即可。</div>
+      <div class="pillrow" style="margin-top:10px">
+        <span class="pill" id="pMorning">☀️ 早上</span>
+        <span class="pill" id="pEvening">🌙 晚上</span>
+      </div>
+      <div class="urlbox" id="urlMorning"></div>
+      <button class="copybtn" data-copy="urlMorning">📋 复制早上链接</button>
+      <div class="urlbox" id="urlEvening" style="margin-top:10px"></div>
+      <button class="copybtn" data-copy="urlEvening">📋 复制晚上链接</button>
+      <div class="desc" style="margin-top:10px">打开 <b>快捷指令 App → 自动化 → 创建个人自动化 → 时间 → 添加「打开 URL」→ 粘贴上面的链接</b>。详细步骤见附带说明。</div>
+    </div>
+
+    <div class="set-row">
+      <h4>🎚 默认音量</h4>
+      <input type="range" id="setVol" min="0" max="100" value="70">
+      <div style="font-size:12px;color:var(--soft)" id="setVolVal">70%</div>
+      <div class="desc">早上用较高音量，晚上建议调低当白噪音哄睡。</div>
+    </div>
+
+    <div class="set-row">
+      <h4>🔀 播放方式</h4>
+      <div class="pillrow">
+        <span class="pill on" id="setShuffle">🔀 洗牌（每天随机）</span>
+        <span class="pill" id="setRepeat">🔁 列表循环</span>
+      </div>
+    </div>
+
+    <div class="set-row">
+      <h4>⏱ 睡眠定时</h4>
+      <div class="pillrow" id="sleepRow">
+        <span class="pill" data-s="0">关闭</span>
+        <span class="pill" data-s="15">15分钟</span>
+        <span class="pill" data-s="30">30分钟</span>
+        <span class="pill" data-s="60">60分钟</span>
+      </div>
+      <div class="desc">到点自动停止，适合睡前场景。</div>
+    </div>
+
+    <div class="set-row">
+      <h4>📲 加到主屏幕</h4>
+      <div class="desc">Safari 打开本页 → 点底部「分享」按钮 → <b>添加到主屏幕</b>。之后像 App 一样点开，配合上面的定时链接，体验最顺。</div>
+    </div>
+  </section>
+</div>
+
+<!-- 底部播放器 -->
+<div class="player" id="player">
+  <div class="pwrap">
+    <div class="pinfo">
+      <div class="pcover" id="pCover">🎵</div>
+      <div class="ptext">
+        <div class="ptitle" id="pTitle">未在播放</div>
+        <div class="psub" id="pSub">点资源库里的 ▶ 开始</div>
+      </div>
+      <div class="pstate" id="pState"></div>
+    </div>
+    <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
+    <div class="ptime"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
+    <div class="ctrl">
+      <button id="prevBtn">⏮</button>
+      <button class="play" id="playBtn">▶</button>
+      <button id="nextBtn">⏭</button>
+      <div class="mini">
+        <span id="shuffleIco" class="on">🔀</span>
+        <span id="repeatIco">🔁</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+"use strict";
+// ===== 精选资源库（与 resources/library.json 同步，共 17 条）=====
+const LIBRARY=[
+ {id:"sn_piggy",title:"This Little Piggy",author:"传统儿歌",lexile:200,grade:"启蒙",accent:"英音",source:"Storynory",emoji:"🐷",type:"storynory",mp3:"https://traffic.libsyn.com/blogrelations/this-little-piggy.mp3",url:"https://storynory.com/this-little-piggy/",note:"超短儿歌，适合刚起步磨耳朵"},
+ {id:"sn_ugly",title:"The Ugly Duckling（丑小鸭）",author:"Hans Christian Andersen",lexile:400,grade:"三年级",accent:"英音",source:"Storynory",emoji:"🦢",type:"storynory",mp3:"https://traffic.libsyn.com/blogrelations/the-ugly-duckling.mp3",url:"https://storynory.com/the-ugly-duckling/",note:"经典童话，语速适中"},
+ {id:"sn_pigs",title:"The Three Little Pigs（三只小猪）",author:"传统童话",lexile:400,grade:"三年级",accent:"英音",source:"Storynory",emoji:"🐽",type:"storynory",mp3:"https://traffic.libsyn.com/blogrelations/the-three-little-pigs.mp3",url:"https://storynory.com/the-three-little-pigs/",note:"重复句式，适合跟读"},
+ {id:"sn_elves",title:"The Elves and the Shoemaker（精灵与鞋匠）",author:"Brothers Grimm",lexile:450,grade:"三年级",accent:"英音",source:"Storynory",emoji:"👞",type:"storynory",mp3:"https://traffic.libsyn.com/blogrelations/the-elves-and-the-shoemaker.mp3",url:"https://storynory.com/the-elves-and-the-shoemaker/",note:"格林童话，词汇友好"},
+ {id:"sn_aladdin",title:"Aladdin and the Wonderful Lamp（阿拉丁）",author:"阿拉伯童话",lexile:500,grade:"三年级",accent:"英音",source:"Storynory",emoji:"🪔",type:"storynory",mp3:"https://traffic.libsyn.com/blogrelations/aladdin.mp3",url:"https://storynory.com/aladdin/",note:"故事性强，孩子爱听"},
+ {id:"sn_robin",title:"Robin Hood（罗宾汉）",author:"传统传奇",lexile:600,grade:"三年级",accent:"英音",source:"Storynory",emoji:"🏹",type:"storynory",mp3:"https://traffic.libsyn.com/blogrelations/robin-hood.mp3",url:"https://storynory.com/robin-hood/",note:"章节式冒险故事"},
+ {id:"sn_alice",title:"Alice's Adventures in Wonderland（爱丽丝）",author:"Lewis Carroll",lexile:600,grade:"三年级",accent:"英音",source:"Storynory",emoji:"🐰",type:"storynory",mp3:"https://traffic.libsyn.com/blogrelations/alices-adventures-in-wonderland.mp3",url:"https://storynory.com/alices-adventures-in-wonderland/",note:"经典奇幻，语言优美"},
+ {id:"sn_arthur",title:"King Arthur（亚瑟王）",author:"传统传奇",lexile:600,grade:"三年级",accent:"英音",source:"Storynory",emoji:"⚔️",type:"storynory",mp3:"https://traffic.libsyn.com/blogrelations/king-arthur.mp3",url:"https://storynory.com/king-arthur/",note:"骑士故事，引人入胜"},
+ {id:"lv_boxcar",title:"The Box-Car Children（棚车少年）",author:"Gertrude Chandler Warner",lexile:490,grade:"三年级",accent:"美音",source:"LibriVox",emoji:"🚃",type:"librivox",archive_id:"boxcarchildren_1310_librivox",url:"https://librivox.org/the-box-car-children-by-gertrude-chandler-warner/",note:"章节书，最适合三年级；点 url 可整本下载"},
+ {id:"lv_peter",title:"The Tale of Peter Rabbit（彼得兔）",author:"Beatrix Potter",lexile:660,grade:"三年级",accent:"英音",source:"LibriVox",emoji:"🐰",type:"librivox",url:"https://librivox.org/search?q=peter+rabbit&search_in=all",note:"点开书页后点 Whole book 下载"},
+ {id:"lv_aesop",title:"Aesop's Fables（伊索寓言）",author:"Aesop",lexile:500,grade:"三年级",accent:"美音",source:"LibriVox",emoji:"🦊",type:"librivox",url:"https://librivox.org/search?q=aesop+fables&search_in=all",note:"短篇寓言，寓意清晰"},
+ {id:"lv_black",title:"Black Beauty（黑骏马）",author:"Anna Sewell",lexile:600,grade:"三年级",accent:"英音",source:"LibriVox",emoji:"🐴",type:"librivox",url:"https://librivox.org/search?q=black+beauty&search_in=all",note:"动物视角，情感丰富"},
+ {id:"lv_velveteen",title:"The Velveteen Rabbit（绒布小兔）",author:"Margery Williams",lexile:790,grade:"进阶",accent:"美音",source:"LibriVox",emoji:"🧸",type:"librivox",url:"https://librivox.org/search?q=velveteen+rabbit&search_in=all",note:"温暖治愈，适合睡前"},
+ {id:"lv_secret",title:"The Secret Garden（秘密花园）",author:"Frances Hodgson Burnett",lexile:720,grade:"进阶",accent:"英音",source:"LibriVox",emoji:"🌷",type:"librivox",url:"https://librivox.org/search?q=secret+garden&search_in=all",note:"成长故事，语言略难"},
+ {id:"lv_pooh",title:"Winnie-the-Pooh（小熊维尼）",author:"A.A. Milne",lexile:790,grade:"进阶",accent:"英音",source:"LibriVox",emoji:"🐻",type:"librivox",url:"https://librivox.org/search?q=winnie+the+pooh&search_in=all",note:"温馨幽默，百听不厌"},
+ {id:"lv_oz",title:"The Wonderful Wizard of Oz（绿野仙踪）",author:"L. Frank Baum",lexile:1030,grade:"进阶",accent:"美音",source:"LibriVox",emoji:"🌈",type:"librivox",url:"https://librivox.org/search?q=wizard+of+oz&search_in=all",note:"蓝思较高，建议听读结合"},
+ {id:"lv_jungle",title:"The Jungle Book（丛林奇书）",author:"Rudyard Kipling",lexile:890,grade:"进阶",accent:"英音",source:"LibriVox",emoji:"🐯",type:"librivox",url:"https://librivox.org/search?q=jungle+book&search_in=all",note:"冒险经典，词汇丰富"}
+];
+
+// ===== 状态 =====
+const audio=document.getElementById('audio');
+let queue=[];          // 当前播放队列（资源对象数组）
+let idx=0;             // 当前索引
+let shuffle=true, repeat=true;
+let sleepTimer=null, sleepEnd=0;
+
+// 设置持久化
+const SKEY='english_kids_settings_v1';
+let settings=Object.assign({vol:70,shuffle:true,repeat:true,sleep:0},JSON.parse(localStorage.getItem(SKEY)||'{}'));
+shuffle=settings.shuffle;repeat=settings.repeat;
+audio.volume=settings.vol/100;
+
+// ===== 工具 =====
+let toastT;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3000);}
+function fmt(s){if(!isFinite(s)||s<0)s=0;s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function copyText(t){if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast('已复制链接 ✅'),()=>toast('复制失败，请长按手动复制'));else toast('请长按链接手动复制');}
+
+// ===== 渲染资源库 =====
+let curFilter='all';
+function renderLib(){
+  const grid=document.getElementById('grid');
+  const list=LIBRARY.filter(b=>curFilter==='all'||b.grade===curFilter);
+  grid.innerHTML='';
+  if(!list.length){grid.innerHTML='<div class="empty">该分级下暂无素材</div>';return;}
+  list.forEach(b=>{
+    const el=document.createElement('div');el.className='book';
+    el.innerHTML=`<div class="emoji">${b.emoji}</div>
+      <h3>${b.title}</h3>
+      <div class="meta">${b.author} · ${b.lexile}L</div>
+      <div class="tags">
+        <span class="tag t-lex">${b.grade}</span>
+        <span class="tag t-acc">${b.accent}</span>
+        <span class="tag t-src">${b.source}</span>
+      </div>
+      <div class="note">${b.note}</div>
+      <div class="acts">
+        <button class="b-play" data-play="${b.id}">▶ 播放</button>
+        <button class="b-add" data-add="${b.id}">＋ 队列</button>
+      </div>`;
+    grid.appendChild(el);
+  });
+}
+document.getElementById('grid').addEventListener('click',e=>{
+  const p=e.target.getAttribute('data-play');const a=e.target.getAttribute('data-add');
+  if(p){const b=LIBRARY.find(x=>x.id===p);if(b)playNow(b);}
+  if(a){const b=LIBRARY.find(x=>x.id===a);if(b)addToQueue(b);}
+});
+document.getElementById('filters').addEventListener('click',e=>{
+  if(!e.target.dataset.f)return;curFilter=e.target.dataset.f;
+  document.querySelectorAll('.filter').forEach(f=>f.classList.toggle('active',f===e.target));
+  renderLib();
+});
+
+// ===== 我的音频 =====
+function getMy(){return JSON.parse(localStorage.getItem('english_kids_my_v1')||'[]');}
+function setMy(a){localStorage.setItem('english_kids_my_v1',JSON.stringify(a));renderMy();}
+function renderMy(){
+  const wrap=document.getElementById('myList');const my=getMy();
+  if(!my.length){wrap.innerHTML='<div class="empty">还没有自定义音频<br>粘贴一个 .mp3 直链试试 👆</div>';return;}
+  wrap.innerHTML='';
+  my.forEach((m,i)=>{
+    const el=document.createElement('div');el.className='myitem';
+    el.innerHTML=`<div class="mi-emoji">🎵</div>
+      <div class="mi-info"><div class="mi-name">${m.name||'我的音频'}</div><div class="mi-url">${m.url}</div></div>
+      <button data-play="${i}">▶</button><button data-del="${i}">🗑</button>`;
+    wrap.appendChild(el);
+  });
+}
+document.getElementById('myList').addEventListener('click',e=>{
+  const pi=e.target.getAttribute('data-play'),di=e.target.getAttribute('data-del');
+  const my=getMy();
+  if(pi!=null){const m=my[pi];if(m)playNow({title:m.name||'我的音频',author:'',emoji:'🎵',mp3:m.url});}
+  if(di!=null){my.splice(di,1);setMy(my);toast('已删除');}
+});
+document.getElementById('addBtn').addEventListener('click',()=>{
+  const inp=document.getElementById('urlInput');const u=inp.value.trim();
+  if(!u){toast('请先粘贴链接');return;}
+  if(!/^https?:\/\/.+\.(mp3|m4a|wav|ogg)(\?.*)?$/i.test(u)&&!/^https?:\/\//.test(u)){toast('请输入以 http 开头的音频链接');return;}
+  const my=getMy();my.push({name:u.split('/').pop().split('?')[0]||'我的音频',url:u});
+  setMy(my);inp.value='';toast('已加入「我的音频」');
+});
+
+// ===== 播放器 =====
+function showPlayer(){document.getElementById('player').classList.add('show');}
+function setNow(b){
+  document.getElementById('pCover').textContent=b.emoji||'🎵';
+  document.getElementById('pTitle').textContent=b.title||'音频';
+  document.getElementById('pSub').textContent=(b.author?b.author+' · ':'')+(b.source||b.accent||'');
+}
+function playNow(b){
+  queue=[b];idx=0;setNow(b);showPlayer();
+  loadAndPlay(b);
+}
+function addToQueue(b){
+  queue.push(b);toast('已加入队列：'+(b.title||''));
+  if(!audio.src){idx=queue.length-1;setNow(b);showPlayer();loadAndPlay(b);}
+}
+function playIndex(i){
+  if(!queue.length)return;
+  idx=(i+queue.length)%queue.length;const b=queue[idx];setNow(b);loadAndPlay(b);
+}
+function loadAndPlay(b){
+  document.getElementById('pState').textContent='缓冲中…';
+  audio.src=b.mp3;
+  audio.play().then(()=>{}).catch(()=>{showTapOverlay();});
+}
+audio.addEventListener('loadedmetadata',()=>{document.getElementById('tDur').textContent=fmt(audio.duration);});
+audio.addEventListener('timeupdate',()=>{
+  const d=audio.duration||0,c=audio.currentTime||0;
+  document.getElementById('fill').style.width=(d?c/d*100:0)+'%';
+  document.getElementById('tCur').textContent=fmt(c);
+  if(sleepEnd&&Date.now()>sleepEnd){audio.pause();clearSleep();toast('⏱ 睡眠定时到，已停止');}
+});
+audio.addEventListener('play',()=>{document.getElementById('playBtn').textContent='⏸';document.getElementById('pState').textContent='播放中';});
+audio.addEventListener('pause',()=>{document.getElementById('playBtn').textContent='▶';document.getElementById('pState').textContent='已暂停';});
+audio.addEventListener('ended',()=>{
+  if(repeat){playIndex(idx+1);}
+  else if(idx<queue.length-1){playIndex(idx+1);}
+  else{document.getElementById('playBtn').textContent='▶';document.getElementById('pState').textContent='播完啦';}
+});
+document.getElementById('playBtn').onclick=()=>{if(!audio.src)return;audio.paused?audio.play().catch(()=>showTapOverlay()):audio.pause();};
+document.getElementById('prevBtn').onclick=()=>playIndex(idx-1);
+document.getElementById('nextBtn').onclick=()=>playIndex(idx+1);
+document.getElementById('bar').onclick=e=>{if(!audio.duration)return;const r=e.currentTarget.getBoundingClientRect();audio.currentTime=(e.clientX-r.left)/r.width*audio.duration;};
+document.getElementById('shuffleIco').onclick=()=>{setShuffle(!shuffle);};
+document.getElementById('repeatIco').onclick=()=>{setRepeat(!repeat);};
+
+// ===== 点击开始遮罩（iOS 自动播放拦截兜底）=====
+function showTapOverlay(){document.getElementById('tapOverlay').classList.add('show');}
+function hideTapOverlay(){document.getElementById('tapOverlay').classList.remove('show');}
+document.getElementById('tapBtn').onclick=()=>{hideTapOverlay();audio.play().catch(()=>toast('仍无法播放，请检查网络或链接'));};
+
+// ===== 设置项 =====
+function setShuffle(v){shuffle=v;settings.shuffle=v;saveSet();document.getElementById('shuffleIco').classList.toggle('on',v);document.getElementById('setShuffle').classList.toggle('on',v);}
+function setRepeat(v){repeat=v;settings.repeat=v;saveSet();document.getElementById('repeatIco').classList.toggle('on',v);document.getElementById('setRepeat').classList.toggle('on',v);}
+function saveSet(){localStorage.setItem(SKEY,JSON.stringify(settings));}
+function clearSleep(){if(sleepTimer){clearInterval(sleepTimer);sleepTimer=null;}sleepEnd=0;document.querySelectorAll('#sleepRow .pill').forEach(p=>p.classList.toggle('on',p.dataset.s==='0'));}
+function setSleep(min){
+  clearSleep();
+  if(min>0){sleepEnd=Date.now()+min*60000;const p=document.querySelector(`#sleepRow .pill[data-s="${min}"]`);if(p)p.classList.add('on');toast('⏱ '+min+' 分钟后停止');}
+}
+document.querySelectorAll('#sleepRow .pill').forEach(p=>p.onclick=()=>setSleep(parseInt(p.dataset.s,10)));
+document.getElementById('setVol').value=settings.vol;
+document.getElementById('setVolVal').textContent=settings.vol+'%';
+document.getElementById('setVol').oninput=e=>{settings.vol=e.target.value;audio.volume=settings.vol/100;document.getElementById('setVolVal').textContent=settings.vol+'%';saveSet();};
+document.getElementById('setShuffle').onclick=()=>setShuffle(!shuffle);
+document.getElementById('setRepeat').onclick=()=>setRepeat(!repeat);
+setShuffle(settings.shuffle);setRepeat(settings.repeat);
+
+// 标签页切换
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
+  const which=t.dataset.t;
+  document.getElementById('sec-lib').style.display=which==='lib'?'block':'none';
+  document.getElementById('sec-mine').style.display=which==='mine'?'block':'none';
+  document.getElementById('sec-set').style.display=which==='set'?'block':'none';
+});
+
+// 复制链接按钮
+document.querySelectorAll('.copybtn').forEach(b=>b.onclick=()=>copyText(document.getElementById(b.dataset.copy).textContent));
+
+// ===== URL 参数：配合快捷指令自动播放 =====
+function baseUrl(){return location.origin+location.pathname;}
+function buildAutoUrl(opts){
+  const p=new URLSearchParams();
+  p.set('auto','1');
+  if(opts.level)p.set('level',opts.level);
+  if(opts.vol!=null)p.set('vol',opts.vol);
+  if(opts.item)p.set('item',opts.item);
+  return baseUrl()+'?'+p.toString();
+}
+function refreshAutoUrls(){
+  const vol=settings.vol;
+  // 早上：三年级为主，较高音量；晚上：三年级+进阶，较低音量当白噪音
+  document.getElementById('urlMorning').textContent=buildAutoUrl({level:'三年级',vol:Math.max(vol,70)});
+  document.getElementById('urlEvening').textContent=buildAutoUrl({level:'三年级',vol:Math.min(vol,45)});
+}
+
+// 处理启动参数
+function handleParams(){
+  const q=new URLSearchParams(location.search);
+  if(q.get('vol')!=null){const v=parseInt(q.get('vol'),10);if(!isNaN(v)&&v>=0&&v<=100){settings.vol=v;audio.volume=v/100;saveSet();}}
+  if(q.get('level')){const lv=q.get('level');const list=LIBRARY.filter(b=>b.grade===lv&&b.mp3);if(list.length){queue=list;}}
+  if(q.get('item')){const b=LIBRARY.find(x=>x.id===q.get('item'));if(b&&b.mp3)queue=[b];}
+  if(q.get('auto')==='1'){
+    if(queue.length){
+      idx=0;setNow(queue[0]);showPlayer();
+      // 尝试自动播放（iOS 可能拦截，由遮罩兜底）
+      audio.src=queue[0].mp3;
+      audio.play().then(()=>{}).catch(()=>setTimeout(showTapOverlay,400));
+    }else{
+      // 无参数队列时，默认播三年级前几首
+      const def=LIBRARY.filter(b=>b.grade==='三年级'&&b.mp3).slice(0,6);
+      queue=def;idx=0;setNow(queue[0]);showPlayer();
+      audio.src=queue[0].mp3;
+      audio.play().then(()=>{}).catch(()=>setTimeout(showTapOverlay,400));
+    }
+  }
+}
+
+// 初始化
+renderLib();renderMy();refreshAutoUrls();
+// 设置变更后（音量）刷新自动链接
+document.getElementById('setVol').addEventListener('change',refreshAutoUrls);
+handleParams();
+</script>
+</body>
+</html>
