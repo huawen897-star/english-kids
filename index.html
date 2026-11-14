@@ -42,21 +42,26 @@
   .filter{flex:0 0 auto;padding:9px 15px;border-radius:999px;font-size:13px;font-weight:700;color:var(--soft);background:var(--card);border:1px solid var(--line)}
   .filter.active{background:var(--blue);color:#fff;border-color:var(--blue)}
 
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-  .book{background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:18px;padding:13px;display:flex;flex-direction:column;position:relative;overflow:hidden}
-  .book .emoji{font-size:22px;margin-bottom:6px}
-  .book h3{margin:0 0 3px;font-size:14px;line-height:1.3}
-  .book .meta{font-size:11px;color:var(--soft);margin-bottom:8px}
-  .tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px}
-  .tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .book{background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .book .top{display:flex;align-items:flex-start;gap:10px;margin-bottom:9px}
+  .book .cover{width:42px;height:42px;border-radius:12px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:24px;background:linear-gradient(135deg,rgba(91,141,239,.28),rgba(177,140,255,.22))}
+  .book .headtext{flex:1;min-width:0}
+  .book h3{margin:0;font-size:14px;font-weight:800;line-height:1.25;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .book .en{font-size:11px;color:var(--soft);line-height:1.3;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .book .dl-ico{flex:0 0 auto;width:30px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;background:var(--card2);border:1px solid var(--line);color:var(--soft);cursor:pointer}
+  .book .dl-ico.done{color:var(--green);border-color:rgba(95,208,164,.45);background:rgba(95,208,164,.12)}
+  .book .dl-ico:active{transform:translateY(1px)}
+  .book .meta{font-size:11px;color:var(--soft);margin:0 0 8px;display:flex;align-items:center;gap:5px}
+  .book .meta .lex{color:var(--blue2);font-weight:700}
+  .tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+  .tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px}
   .t-lex{background:rgba(91,141,239,.18);color:#9cc0ff}
-  .t-acc{background:rgba(255,143,177,.18);color:#ffb3cb}
   .t-src{background:rgba(95,208,164,.18);color:#86e6c2}
-  .book .note{font-size:11px;color:var(--soft);line-height:1.45;margin:0 0 10px;flex:1}
-  .acts{display:flex;gap:7px}
-  .acts button{flex:1;border:none;border-radius:11px;padding:9px 4px;font-size:12px;font-weight:700}
-  .b-play{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff}
-  .b-add{background:var(--card2);color:var(--soft);border:1px solid var(--line)!important}
+  .book .note{font-size:11px;color:var(--soft);line-height:1.5;margin:0 0 12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:1}
+  .acts{display:flex;gap:8px}
+  .acts .b-play{flex:1;border:none;border-radius:11px;padding:10px 4px;font-size:13px;font-weight:800;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff}
+  .acts .b-icon{flex:0 0 auto;width:44px;border:1px solid var(--line);border-radius:11px;padding:10px 0;font-size:17px;background:var(--card2);color:var(--soft)}
 
   .tip{font-size:12px;color:var(--soft);line-height:1.6;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
   .tip b{color:var(--blue2)}
@@ -110,10 +115,10 @@
   .bar{height:5px;background:var(--line);border-radius:999px;margin:10px 0 4px;position:relative;overflow:hidden}
   .bar .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--blue),var(--blue2));border-radius:999px}
   .ptime{display:flex;justify-content:space-between;font-size:10px;color:var(--soft);margin-bottom:8px}
-  .ctrl{display:flex;align-items:center;justify-content:center;gap:22px}
-  .ctrl button{background:transparent;border:none;color:var(--ink);font-size:24px;padding:2px 6px}
-  .ctrl .play{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 6px 18px rgba(91,141,239,.5)}
-  .mini{display:flex;align-items:center;gap:16px;font-size:18px;color:var(--soft)}
+  .ctrl{display:flex;align-items:center;justify-content:center;gap:16px}
+  .ctrl button{background:transparent;border:none;color:var(--ink);font-size:22px;padding:2px 4px}
+  .ctrl .play{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-size:25px;box-shadow:0 6px 18px rgba(91,141,239,.5)}
+  .mini{display:flex;align-items:center;gap:13px;font-size:17px;color:var(--soft)}
   .mini .on{color:var(--blue2)}
   .mini #subIco{cursor:pointer}
   .subpanel{margin:10px 0 4px;background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:18px;overflow:hidden}
@@ -441,19 +446,27 @@ function renderLib(){
   list.forEach(b=>{
     const el=document.createElement('div');el.className='book';
     const got=downloaded[b.id];
-    el.innerHTML=`<div class="emoji">${b.emoji}</div>
-      <h3>${b.title}${got?'<span class="dl-badge">✓ 已下载</span>':''}</h3>
-      <div class="meta">${b.author} · ${b.lexile}L</div>
+    const mm=String(b.title).match(/^(.*?)（(.*?)）(.*)$/);
+    const enN=mm?mm[1].trim():b.title;
+    const zhN=mm?mm[2].trim():'';
+    el.innerHTML=`
+      <div class="top">
+        <div class="cover">${b.emoji}</div>
+        <div class="headtext">
+          <h3>${zhN||enN}</h3>
+          ${zhN?`<div class="en">${escapeHtml(enN)}</div>`:''}
+        </div>
+        <div class="dl-ico ${got?'done':''}" data-dl="${b.id}" title="下载到本机（离线听）">${got?'✓':'⬇'}</div>
+      </div>
+      <div class="meta"><span class="lex">${b.lexile}L</span><span>· ${b.accent}</span></div>
       <div class="tags">
         <span class="tag t-lex">${b.grade}</span>
-        <span class="tag t-acc">${b.accent}</span>
         <span class="tag t-src">${b.source}</span>
       </div>
       <div class="note">${b.note}</div>
       <div class="acts">
         <button class="b-play" data-play="${b.id}">▶ 播放</button>
-        <button class="b-add" data-add="${b.id}">＋ 队列</button>
-        <button class="b-dl" data-dl="${b.id}">${got?'✓ 已下':'⬇ 下载'}</button>
+        <button class="b-icon" data-add="${b.id}" title="加入队列">＋</button>
       </div>`;
     grid.appendChild(el);
   });
