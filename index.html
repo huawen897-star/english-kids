@@ -108,6 +108,16 @@
   .ctrl .play{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 6px 18px rgba(91,141,239,.5)}
   .mini{display:flex;align-items:center;gap:16px;font-size:18px;color:var(--soft)}
   .mini .on{color:var(--blue2)}
+  .mini #subIco{cursor:pointer}
+  .subpanel{margin:10px 0 4px;background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .subpanel.hidden{display:none}
+  .subhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;font-size:13px;font-weight:800}
+  .subhead .subhint{font-size:11px;color:var(--soft);font-weight:600}
+  .subbody{max-height:230px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 16px}
+  .subbody p{font-size:15px;line-height:1.85;color:var(--ink);margin:0 0 12px;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.03)}
+  .subbody p.cur{background:linear-gradient(135deg,rgba(91,141,239,.18),rgba(123,166,255,.12));border:1px solid var(--blue)}
+  .subbody .noface{color:var(--soft);font-size:13px;line-height:1.7;background:transparent;padding:4px 0}
+  .subbody .noface b{color:var(--blue2)}
 
   /* 点击开始遮罩（iOS 自动播放被拦截时的兜底）*/
   .tap-overlay{position:fixed;inset:0;z-index:90;background:radial-gradient(120% 80% at 50% 30%,#2a3270,#0d0f24);
@@ -293,6 +303,14 @@
     </div>
 
     <div class="set-row">
+      <h4>📝 字幕（边听边看）</h4>
+      <div class="pillrow">
+        <span class="pill on" id="setSub">显示字幕（跟着读）</span>
+      </div>
+      <div class="desc">播放时下方会显示故事文字，孩子可以边听边看、跟着念。多数故事都内置了字幕。</div>
+    </div>
+
+    <div class="set-row">
       <h4>⏱ 睡眠定时</h4>
       <div class="pillrow" id="sleepRow">
         <span class="pill" data-s="0">关闭</span>
@@ -332,15 +350,23 @@
       <button id="nextBtn">⏭</button>
       <div class="mini">
         <span id="shuffleIco" class="on">🔀</span>
+        <span id="subIco" class="on" title="字幕">📝</span>
         <span id="repeatIco">🔁</span>
       </div>
     </div>
   </div>
 </div>
 
+<!-- 字幕面板 -->
+<div class="subpanel" id="subpanel">
+  <div class="subhead"><span id="subTitle">字幕</span><span class="subhint">边听边看，跟着读</span></div>
+  <div class="subbody" id="subBody"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 <audio id="audio" preload="metadata"></audio>
 
+<script src="subtitles.js"></script>
 <script>
 "use strict";
 // ===== 精选资源库（与 resources/library.json 同步，共 27 条，链接均经实测可播放）=====
@@ -378,13 +404,13 @@ const LIBRARY=[
 const audio=document.getElementById('audio');
 let queue=[];          // 当前播放队列（资源对象数组）
 let idx=0;             // 当前索引
-let shuffle=true, repeat=true;
+let shuffle=true, repeat=true, sub=true;
 let sleepTimer=null, sleepEnd=0;
 
 // 设置持久化
 const SKEY='english_kids_settings_v1';
-let settings=Object.assign({vol:70,shuffle:true,repeat:true,sleep:0},JSON.parse(localStorage.getItem(SKEY)||'{}'));
-shuffle=settings.shuffle;repeat=settings.repeat;
+let settings=Object.assign({vol:70,shuffle:true,repeat:true,sleep:0,sub:true},JSON.parse(localStorage.getItem(SKEY)||'{}'));
+shuffle=settings.shuffle;repeat=settings.repeat;sub=settings.sub;
 audio.volume=settings.vol/100;
 
 // ===== 工具 =====
@@ -464,7 +490,24 @@ function setNow(b){
   document.getElementById('pCover').textContent=b.emoji||'🎵';
   document.getElementById('pTitle').textContent=b.title||'音频';
   document.getElementById('pSub').textContent=(b.author?b.author+' · ':'')+(b.source||b.accent||'');
+  renderSubtitles();
 }
+// ===== 字幕面板 =====
+function renderSubtitles(){
+  const panel=document.getElementById('subpanel'),body=document.getElementById('subBody'),titleEl=document.getElementById('subTitle');
+  const cur=queue[idx];
+  if(!settings.sub||!cur){panel.classList.add('hidden');return;}
+  panel.classList.remove('hidden');
+  if(!cur||!SUBTITLES||!SUBTITLES[cur.mp3]){
+    titleEl.textContent='字幕';
+    body.innerHTML='<p class="noface">这首暂时没有同步字幕～<br>换一首资源库里的故事就有啦，边听边看更容易记住。</p>';
+    return;
+  }
+  titleEl.textContent='字幕 · '+(cur.title||'');
+  body.innerHTML=SUBTITLES[cur.mp3].map(t=>'<p>'+escapeHtml(t)+'</p>').join('');
+  body.scrollTop=0;
+}
+function setSub(v){sub=v;settings.sub=v;saveSet();document.getElementById('subIco').classList.toggle('on',v);document.getElementById('setSub').classList.toggle('on',v);renderSubtitles();}
 function playNow(b){
   b._order=(b._order!=null)?b._order:orderSeq++;
   queue=[b];idx=0;setNow(b);showPlayer();
@@ -611,6 +654,7 @@ document.getElementById('nextBtn').onclick=()=>playIndex(idx+1);
 document.getElementById('bar').onclick=e=>{if(!audio.duration)return;const r=e.currentTarget.getBoundingClientRect();audio.currentTime=(e.clientX-r.left)/r.width*audio.duration;};
 document.getElementById('shuffleIco').onclick=()=>{setShuffle(!shuffle);};
 document.getElementById('repeatIco').onclick=()=>{setRepeat(!repeat);};
+document.getElementById('subIco').onclick=()=>{setSub(!sub);};
 
 // ===== 点击开始遮罩（iOS 自动播放拦截兜底）=====
 function showTapOverlay(){document.getElementById('tapOverlay').classList.add('show');}
@@ -632,7 +676,8 @@ document.getElementById('setVolVal').textContent=settings.vol+'%';
 document.getElementById('setVol').oninput=e=>{settings.vol=e.target.value;audio.volume=settings.vol/100;document.getElementById('setVolVal').textContent=settings.vol+'%';saveSet();};
 document.getElementById('setShuffle').onclick=()=>setShuffle(!shuffle);
 document.getElementById('setRepeat').onclick=()=>setRepeat(!repeat);
-setShuffle(settings.shuffle);setRepeat(settings.repeat);
+setShuffle(settings.shuffle);setRepeat(settings.repeat);setSub(settings.sub);
+document.getElementById('setSub').onclick=()=>setSub(!sub);
 
 // 标签页切换
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
