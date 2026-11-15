@@ -165,6 +165,11 @@
   .phone-mock .ln.hl{background:linear-gradient(135deg,var(--blue),var(--blue2))}
   .phone-mock .ln.g{background:#1f6b4a}
   .gentip{font-size:11px;color:var(--soft);text-align:center;margin-top:6px}
+  .chktip{margin-top:12px;padding:12px 14px;background:rgba(255,176,32,.10);border:1px solid rgba(255,176,32,.35);border-radius:14px;font-size:12.5px;line-height:1.6;color:#ffe2a8}
+  .chktip b{color:#ffd277}
+  .chktip ol{margin:7px 0 0;padding-left:18px}
+  .chktip li{margin:4px 0}
+  .chktip code{background:rgba(255,255,255,.12);padding:1px 5px;border-radius:5px;font-size:11.5px}
 
   .toast{position:fixed;left:50%;bottom:calc(180px + var(--sb));transform:translateX(-50%);background:rgba(20,24,52,.96);color:#fff;
     padding:11px 18px;border-radius:999px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;transition:.3s;pointer-events:none;z-index:80;max-width:90%;text-align:center}
@@ -260,7 +265,7 @@
     <div class="sess">
       <div class="top">☀️ 早上（起床磨耳朵）</div>
       <div class="row2">
-        <div class="field"><label>每天时间</label><input type="time" id="timeMorning" value="07:30"></div>
+        <div class="field"><label>每天时间</label><input type="time" id="timeMorning" value="07:00"></div>
         <div class="field vol"><label>音量 <span id="volM">70%</span></label><input type="range" id="volMorning" min="0" max="100" value="70"></div>
       </div>
       <button class="copybig" data-copy="urlMorning">📋 复制早上链接</button>
@@ -285,7 +290,7 @@
       <h4>📱 3 步设置定时（看图就会）</h4>
       <ol class="steps">
         <li>打开 iPhone 自带 <b>「快捷指令」</b> App → 底部 <b>「自动化」</b> → 右上角 <b>「+」</b> → <b>「创建个人自动化」</b> → 选 <b>「时间」</b>。</li>
-        <li>把时间设成你上面选的 <b>早上 <span id="tM">7:30</span></b> / <b>晚上 <span id="tE">20:00</span></b>，重复选「每天」，点「下一步」。</li>
+        <li>把时间设成你上面选的 <b>早上 <span id="tM">7:00</span></b> / <b>晚上 <span id="tE">20:00</span></b>，重复选「每天」，点「下一步」。</li>
         <li>点 <b>「添加操作」</b> → 搜 <b>「打开 URL」</b> → 粘贴对应链接 → 关闭 <b>「运行前询问」</b> → 完成。到点手机自动弹出播放 🎉</li>
       </ol>
       <div class="phone-mock">
@@ -299,6 +304,14 @@
         </div>
       </div>
       <div class="gentip">示意：把链接放进「打开 URL」即可</div>
+      <div class="chktip"><b>⚠️ 如果到点没自动响，按这 4 条自查：</b>
+        <ol>
+          <li>打开「快捷指令 → 自动化」，确认这条<strong>「时间」自动化</strong>还在、没被关掉（左滑可看开关）。</li>
+          <li>确认「打开 URL」里粘的链接含 <code>?auto=1</code>，且时间、重复「每天」都设对了。</li>
+          <li>确认「运行前询问」<strong>已关闭</strong>（否则到点只弹通知，不自动播）。</li>
+          <li>iPhone 当时最好<strong>连着网、没关机</strong>；若弹出大「▶ 开始播放」按钮，点一下即可（iOS 会拦首次静音自动播放）。</li>
+        </ol>
+      </div>
     </div>
 
     <div class="set-row">
@@ -427,6 +440,7 @@ let sleepTimer=null, sleepEnd=0;
 let subParas=[];        // 当前字幕段落数组
 let lastSubIdx=-1;      // 上次高亮的段落索引（避免重复滚动）
 let downloaded=JSON.parse(localStorage.getItem('english_kids_dl_v1')||'{}');  // 已下载到本机的音频 id
+let wantAuto=false, autoTries=0;   // 自动播放标记与重试计数
 
 // 设置持久化
 const SKEY='english_kids_settings_v1';
@@ -732,7 +746,7 @@ document.getElementById('linkIco').onclick=()=>{const b=queue[idx];if(b)openLink
 // ===== 点击开始遮罩（iOS 自动播放拦截兜底）=====
 function showTapOverlay(){document.getElementById('tapOverlay').classList.add('show');}
 function hideTapOverlay(){document.getElementById('tapOverlay').classList.remove('show');}
-document.getElementById('tapBtn').onclick=()=>{hideTapOverlay();audio.play().catch(()=>toast('仍无法播放，请检查网络或链接'));};
+document.getElementById('tapBtn').onclick=()=>{hideTapOverlay();attemptAuto();};
 
 // ===== 设置项 =====
 function setShuffle(v){shuffle=v;settings.shuffle=v;saveSet();document.getElementById('shuffleIco').classList.toggle('on',v);document.getElementById('setShuffle').classList.toggle('on',v);syncQShuffle();}
@@ -815,26 +829,43 @@ function handleParams(){
   if(q.get('level')){const lv=q.get('level');const list=LIBRARY.filter(b=>b.grade===lv&&b.mp3);if(list.length){queue=list;}}
   if(q.get('item')){const b=LIBRARY.find(x=>x.id===q.get('item'));if(b&&b.mp3)queue=[b];}
   if(q.get('auto')==='1'){
-    if(queue.length){
-      idx=0;setNow(queue[0]);showPlayer();
-      // 尝试自动播放（iOS 可能拦截，由遮罩兜底）
-      audio.src=queue[0].mp3;
-      audio.play().then(()=>{}).catch(()=>setTimeout(showTapOverlay,400));
-    }else{
+    if(!queue.length){
       // 无参数队列时，默认播三年级前几首
       const def=LIBRARY.filter(b=>b.grade==='三年级'&&b.mp3).slice(0,6);
-      queue=def;idx=0;setNow(queue[0]);showPlayer();
+      queue=def;
+    }
+    if(queue.length){
+      idx=0;setNow(queue[0]);showPlayer();
       audio.src=queue[0].mp3;
-      audio.play().then(()=>{}).catch(()=>setTimeout(showTapOverlay,400));
+      wantAuto=true;attemptAuto();   // 多尝试几次，被拦截则弹大按钮
+    }else{
+      showTapOverlay();
     }
   }
+}
+
+// 自动播放：iOS 常拦截"无声自动播放"，这里反复尝试 + 首次手势补播
+function attemptAuto(){
+  if(!wantAuto)return;
+  audio.play().then(()=>{wantAuto=false;autoTries=0;hideTapOverlay();})
+    .catch(()=>{
+      showTapOverlay();                       // 弹超大「▶ 开始播放」按钮
+      if(autoTries<8){autoTries++;setTimeout(attemptAuto,1000);}  // 最多重试约 8 秒
+    });
+}
+// 音频可播放时再试一次
+audio.addEventListener('canplay',()=>{if(wantAuto)attemptAuto();});
+// 用户首次触摸/点击/滚动即视为已授权，立刻补播
+function bindAutoGesture(){
+  const once=()=>{if(wantAuto)attemptAuto();};
+  ['touchstart','click','scroll'].forEach(ev=>document.addEventListener(ev,once,{once:true,passive:true}));
 }
 
 // 初始化
 renderLib();renderMy();renderQueue();refreshAutoUrls();
 // 设置变更后（音量）刷新自动链接
 document.getElementById('setVol').addEventListener('change',refreshAutoUrls);
-handleParams();renderQueue();
+handleParams();renderQueue();bindAutoGesture();
 
 // ===== 播放条：手动收起 / 自动隐藏（避免挡住字幕）=====
 function collapsePlayer(v){
