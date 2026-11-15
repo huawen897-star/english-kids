@@ -113,8 +113,11 @@
   .ptitle{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .psub{font-size:11px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pstate{flex:0 0 auto;font-size:11px;color:var(--soft);min-width:42px;text-align:right}
-  .bar{height:5px;background:var(--line);border-radius:999px;margin:10px 0 4px;position:relative;overflow:hidden}
+  .bar{height:22px;display:flex;align-items:center;margin:6px 0 2px;position:relative;touch-action:none;cursor:pointer}
+  .bar .track{position:absolute;left:0;right:0;height:5px;background:var(--line);border-radius:999px;overflow:hidden}
   .bar .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--blue),var(--blue2));border-radius:999px}
+  .bar .knob{position:absolute;left:0;width:15px;height:15px;border-radius:50%;background:#fff;border:3px solid var(--blue2);box-shadow:0 2px 8px rgba(0,0,0,.45);transform:translateX(-50%);pointer-events:none;transition:transform .08s}
+  .bar.dragging .knob{transform:translateX(-50%) scale(1.3)}
   .ptime{display:flex;justify-content:space-between;font-size:10px;color:var(--soft);margin-bottom:8px}
   .ctrl{display:flex;align-items:center;justify-content:center;gap:16px}
   .ctrl button{background:transparent;border:none;color:var(--ink);font-size:22px;padding:2px 4px}
@@ -370,7 +373,7 @@
       </div>
       <div class="pstate" id="pState"></div>
     </div>
-    <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
+    <div class="bar" id="bar"><div class="track"><div class="fill" id="fill"></div></div><div class="knob" id="knob"></div></div>
     <div class="ptime"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
     <div class="ctrl">
       <button id="prevBtn">⏮</button>
@@ -719,9 +722,15 @@ document.getElementById('qShuffle').addEventListener('click',()=>{
   syncQShuffle();
 });
 audio.addEventListener('loadedmetadata',()=>{document.getElementById('tDur').textContent=fmt(audio.duration);});
+let barDragging=false;   // 是否正在拖动进度条
+function paintBar(pct){
+  const p=Math.max(0,Math.min(100,pct));
+  document.getElementById('fill').style.width=p+'%';
+  document.getElementById('knob').style.left=p+'%';
+}
 audio.addEventListener('timeupdate',()=>{
   const d=audio.duration||0,c=audio.currentTime||0;
-  document.getElementById('fill').style.width=(d?c/d*100:0)+'%';
+  if(!barDragging){paintBar(d?c/d*100:0);}
   document.getElementById('tCur').textContent=fmt(c);
   highlightSub();
   if(sleepEnd&&Date.now()>sleepEnd){audio.pause();clearSleep();toast('⏱ 睡眠定时到，已停止');}
@@ -736,7 +745,41 @@ audio.addEventListener('ended',()=>{
 document.getElementById('playBtn').onclick=()=>{if(!audio.src)return;audio.paused?audio.play().catch(()=>showTapOverlay()):audio.pause();};
 document.getElementById('prevBtn').onclick=()=>playIndex(idx-1);
 document.getElementById('nextBtn').onclick=()=>playIndex(idx+1);
-document.getElementById('bar').onclick=e=>{if(!audio.duration)return;const r=e.currentTarget.getBoundingClientRect();audio.currentTime=(e.clientX-r.left)/r.width*audio.duration;};
+// ===== 进度条拖拽跳转（支持手指滑动 + 鼠标）=====
+(function(){
+  const bar=document.getElementById('bar');
+  const posToPct=clientX=>{const r=bar.getBoundingClientRect();return (clientX-r.left)/r.width*100;};
+  const seekPreview=pct=>{
+    if(!isFinite(audio.duration)||!audio.duration)return;
+    paintBar(pct);
+    document.getElementById('tCur').textContent=fmt(pct/100*audio.duration);
+  };
+  const commitSeek=pct=>{
+    if(!isFinite(audio.duration)||!audio.duration)return;
+    audio.currentTime=Math.max(0,Math.min(0.999,pct/100))*audio.duration;
+    highlightSub();
+  };
+  // Pointer Events 统一处理 touch / mouse
+  bar.addEventListener('pointerdown',e=>{
+    if(!isFinite(audio.duration)||!audio.duration)return;
+    barDragging=true;bar.classList.add('dragging');
+    bar.setPointerCapture(e.pointerId);
+    seekPreview(posToPct(e.clientX));
+    e.preventDefault();
+  });
+  bar.addEventListener('pointermove',e=>{
+    if(!barDragging)return;
+    seekPreview(posToPct(e.clientX));
+  });
+  const end=e=>{
+    if(!barDragging)return;
+    const pct=posToPct(e.clientX);
+    barDragging=false;bar.classList.remove('dragging');
+    commitSeek(pct);
+  };
+  bar.addEventListener('pointerup',end);
+  bar.addEventListener('pointercancel',()=>{barDragging=false;bar.classList.remove('dragging');paintBar(audio.duration?audio.currentTime/audio.duration*100:0);});
+})();
 document.getElementById('shuffleIco').onclick=()=>{setShuffle(!shuffle);};
 document.getElementById('repeatIco').onclick=()=>{setRepeat(!repeat);};
 document.getElementById('subIco').onclick=()=>{setSub(!sub);};
